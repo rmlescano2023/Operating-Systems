@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define MAX_COUNT 100
 
@@ -13,7 +14,7 @@
 //---------------------------------------------------------------------------------------------------------------------------------------------- FUNCTION DECLARATIONS
 typedef struct {
     int processNum, arrivalTime, burstTime, remainingTime, idleTime, processDone;
-} Values;
+} PROCESS;
 
 typedef struct {        // stores the history of processes
     int pNum, pBurst, totalBurst;
@@ -24,9 +25,9 @@ void SJF(int processes);
 void priorityBased(int processes);
 void roundRobin(int processes);
 
-int totalTime(Values value[MAX_COUNT], int processes);
-void bubbleSort(Values value[MAX_COUNT], int processes);
-int results(Values value[MAX_COUNT], int processes);
+int totalTime(PROCESS value[MAX_COUNT], int processes);
+void bubbleSort(PROCESS value[MAX_COUNT], int processes);
+int printSummary(PROCESS value[MAX_COUNT], int processes);
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- MAIN
 int main() {
@@ -105,13 +106,15 @@ int main() {
 // ---------------------------------------------------------------------------------------------------------------------------------------------- SCHEDULING ALGORITHMS
 void FCFS(int processes) {      // OK
 
-    Values value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
+    PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
 
     // SAMPLE DATA
-    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 26;
-    value[1].processNum = 2, value[1].arrivalTime = 25, value[1].burstTime = 154;
-    value[2].processNum = 3, value[2].arrivalTime = 75, value[2].burstTime = 127;
-    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300;
+    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 26, value[0].processDone = 0;
+    value[1].processNum = 2, value[1].arrivalTime = 25, value[1].burstTime = 154, value[1].processDone = 0;
+    value[2].processNum = 3, value[2].arrivalTime = 75, value[2].burstTime = 127, value[2].processDone = 0;
+    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0;
+
+    // value is an array
     // SAMPLE DATA
 
     printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
@@ -119,13 +122,55 @@ void FCFS(int processes) {      // OK
         printf("\tProcess %d: %d %d\n", i + 1, value[i].arrivalTime, value[i].burstTime);
     }
 
-    results(value, processes);  // process results
+    // Counter represents the clock in the OS
+    // CurrentProcess represents the current process being executed
+    int timer = 0;
+    bool currentProcess = false;
+
+    // Image this as a click in the clock of OS
+    while (true) {
+
+        // Check if all processes are done
+        bool allDone = false;
+        for (int i = 0; i < processes; i++) {
+            if (value[i].processDone == 1) {
+                allDone = true;
+                break;
+            }
+        }
+
+        if (allDone == true) {
+            break;
+        }
+
+        // Consume a process
+        bool consumed = false;
+
+        for (int i = 0; i < processes; i++) {
+            if (value[i].arrivalTime <= timer && value[i].processDone == 0) {
+                currentProcess = true;
+                value[i].processDone = 1;
+                timer += value[i].burstTime;
+                printf("\n\tProcess %d is being executed.\n", value[i].processNum);
+                consumed = true;
+                break;
+            }
+        }
+
+        if (consumed == true) {
+            continue;
+        }
+
+        timer++;
+    }
+
+    printSummary(value, processes);  // process results
 
 }
 
 void SJF(int processes) {
 
-    Values value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
+    PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
 
     // SAMPLE DATA // SORTED ORDER: P4 P1 P3 P2
     value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 26;
@@ -162,7 +207,7 @@ void priorityBased(int processes) {
 
 void roundRobin(int processes) {
 
-    Values value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 100
+    PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 100
     Gantt chart[MAX_COUNT];
     
     int quantum = 20;  // Time Quantum
@@ -303,7 +348,7 @@ void roundRobin(int processes) {
 
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- OTHER FUNCTIONS
-int totalTime(Values value[MAX_COUNT], int processes) {
+int totalTime(PROCESS value[MAX_COUNT], int processes) {
 
     // this function adds all the remaining burst time, if it is equal to zero, all processes are done
     int total = 0;
@@ -314,7 +359,7 @@ int totalTime(Values value[MAX_COUNT], int processes) {
     return total;
 }
 
-void bubbleSort(Values value[MAX_COUNT], int processes) {
+void bubbleSort(PROCESS value[MAX_COUNT], int processes) {
 
     int i, j, temp1, temp2;
     for (i = 0; i < processes - 1; i++) {
@@ -334,7 +379,7 @@ void bubbleSort(Values value[MAX_COUNT], int processes) {
     
 }
 
-int results(Values value[MAX_COUNT], int processes) {
+int printSummary(PROCESS value[MAX_COUNT], int processes) {
 
     int burstArray[MAX_COUNT], turnaroundArray[MAX_COUNT], waitingArray[MAX_COUNT];     // arrays
     float turnaroundSum = 0, waitingSum = 0;                                            // sums
