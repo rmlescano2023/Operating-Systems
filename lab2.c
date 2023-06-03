@@ -13,7 +13,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------------------------------- FUNCTION DECLARATIONS
 typedef struct {
-    int processNum, arrivalTime, burstTime, remainingTime, idleTime, processDone;
+    int processNum, arrivalTime, burstTime, remainingTime, idleTime, processDone, toRun;
 } PROCESS;
 
 typedef struct {        // stores the history of processes
@@ -109,9 +109,9 @@ void FCFS(int processes) {      // OK
     PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
 
     // SAMPLE DATA
-    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 26, value[0].processDone = 0;
-    value[1].processNum = 2, value[1].arrivalTime = 25, value[1].burstTime = 154, value[1].processDone = 0;
-    value[2].processNum = 3, value[2].arrivalTime = 75, value[2].burstTime = 127, value[2].processDone = 0;
+    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 30, value[0].processDone = 0;
+    value[1].processNum = 2, value[1].arrivalTime = 28, value[1].burstTime = 154, value[1].processDone = 0;
+    value[2].processNum = 3, value[2].arrivalTime = 26, value[2].burstTime = 127, value[2].processDone = 0;
     value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0;
 
     // value is an array
@@ -131,36 +131,47 @@ void FCFS(int processes) {      // OK
     while (true) {
 
         // Check if all processes are done
-        bool allDone = false;
+        bool allDone = true;
         for (int i = 0; i < processes; i++) {
-            if (value[i].processDone == 1) {
-                allDone = true;
+            if (value[i].processDone == 0) {
+                allDone = false;
                 break;
             }
         }
 
         if (allDone == true) {
+            printf("FINISHED\n");
             break;
         }
 
         // Consume a process
-        bool consumed = false;
 
+        // pangita process na pwede ma run nga may pinakanubo nga arrival time
+        // SORT BY ARRIVAL TIME BEFORE PROCEEDING
+        int toProcessIndex = -1, smallestArrivalTime = 0;
         for (int i = 0; i < processes; i++) {
             if (value[i].arrivalTime <= timer && value[i].processDone == 0) {
-                currentProcess = true;
-                value[i].processDone = 1;
-                timer += value[i].burstTime;
-                printf("\n\tProcess %d is being executed.\n", value[i].processNum);
-                consumed = true;
-                break;
+                
+                if (smallestArrivalTime == 0) {                          // For the first smallest process
+                    smallestArrivalTime = value[i].arrivalTime;
+                    toProcessIndex = i;
+                }
+                else if (value[i].arrivalTime < smallestArrivalTime) {  
+                    smallestArrivalTime = value[i].arrivalTime;
+                    toProcessIndex = i;
+                }
+
             }
         }
-
-        if (consumed == true) {
+        if (toProcessIndex != -1) {
+            value[toProcessIndex].idleTime = timer - value[toProcessIndex].arrivalTime;
+            printf("\n\tProcess %d is being executed with idle time %d.\t", value[toProcessIndex].processNum, value[toProcessIndex].idleTime);
+            timer += value[toProcessIndex].burstTime;
+            value[toProcessIndex].processDone = 1;
             continue;
         }
 
+ 
         timer++;
     }
 
@@ -172,30 +183,73 @@ void SJF(int processes) {
 
     PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
 
-    // SAMPLE DATA // SORTED ORDER: P4 P1 P3 P2
-    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 26;
-    value[1].processNum = 2, value[1].arrivalTime = 25, value[1].burstTime = 154;
-    value[2].processNum = 3, value[2].arrivalTime = 75, value[2].burstTime = 127;
-    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300;
-    // SAMPLE DATA // SORTED ORDER: P4 P1 P3 P2
+    // SAMPLE DATA
+    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 30, value[0].processDone = 0;
+    value[1].processNum = 2, value[1].arrivalTime = 28, value[1].burstTime = 154, value[1].processDone = 0;
+    value[2].processNum = 3, value[2].arrivalTime = 26, value[2].burstTime = 167, value[2].processDone = 0;
+    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0;
+
+    // value is an array
+    // SAMPLE DATA
 
     printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
     for (int i = 0; i < processes; i++) {
         printf("\tProcess %d: %d %d\n", i + 1, value[i].arrivalTime, value[i].burstTime);
     }
 
-    printf("\nOriginal Array:");
-    for (int i = 0; i < processes; i++) {
-        printf("\nP%d: %d", value[i].processNum, value[i].burstTime);
+    // Counter represents the clock in the OS
+    // CurrentProcess represents the current process being executed
+    int timer = 0;
+    bool currentProcess = false;
+
+    // Image this as a click in the clock of OS
+    while (true) {
+
+        // Check if all processes are done
+        bool allDone = true;
+        for (int i = 0; i < processes; i++) {
+            if (value[i].processDone == 0) {
+                allDone = false;
+                break;
+            }
+        }
+
+        if (allDone == true) {
+            printf("FINISHED\n");
+            break;
+        }
+
+        // Consume a process
+
+        // pangita process na pwede ma run nga may pinakanubo nga arrival time
+        int toProcessIndex = -1, smallestBurstTime = 0;
+        for (int i = 0; i < processes; i++) {
+            if (value[i].arrivalTime <= timer && value[i].processDone == 0) {
+
+                if (smallestBurstTime == 0) {                          // For the first smallest process
+                    smallestBurstTime = value[i].burstTime;
+                    toProcessIndex = i;
+                }
+                else if (value[i].burstTime < smallestBurstTime) {  
+                    smallestBurstTime = value[i].burstTime;
+                    toProcessIndex = i;
+                }
+
+            }
+        }
+        if (toProcessIndex != -1) {
+            value[toProcessIndex].idleTime = timer - value[toProcessIndex].arrivalTime;
+            printf("\n\tProcess %d is being executed with idle time %d.\t", value[toProcessIndex].processNum, value[toProcessIndex].idleTime);
+            timer += value[toProcessIndex].burstTime;
+            value[toProcessIndex].processDone = 1;
+            continue;
+        }
+
+ 
+        timer++;
     }
 
-    bubbleSort(value, processes);
-    printf("\n\nSorted Array:");
-    for (int i = 0; i < processes; i++) {
-        printf("\nP%d: %d", value[i].processNum, value[i].burstTime);
-    }
-
-    results(value, processes);
+    printSummary(value, processes);  // process results
 
 }
 
@@ -207,6 +261,97 @@ void priorityBased(int processes) {
 
 void roundRobin(int processes) {
 
+
+    PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
+    int quantum = 5;
+
+    // SAMPLE DATA
+    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 30, value[0].processDone = 0;
+    value[1].processNum = 2, value[1].arrivalTime = 28, value[1].burstTime = 154, value[1].processDone = 0;
+    value[2].processNum = 3, value[2].arrivalTime = 26, value[2].burstTime = 167, value[2].processDone = 0;
+    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0;
+
+    // value is an array
+    // SAMPLE DATA
+
+    printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
+    for (int i = 0; i < processes; i++) {
+        printf("\tProcess %d: %d %d\n", i + 1, value[i].arrivalTime, value[i].burstTime);
+    }
+
+    // Counter represents the clock in the OS
+    // CurrentProcess represents the current process being executed
+    int timer = 0;
+    bool currentProcess = false;
+
+    // Image this as a click in the clock of OS
+    while (true) {
+
+        // Check if all processes are done
+        bool allDone = true;
+        for (int i = 0; i < processes; i++) {
+            if (value[i].processDone == 0) {
+                allDone = false;
+                break;
+            }
+        }
+
+        if (allDone == true) {
+            printf("FINISHED\n");
+            break;
+        }
+
+        // Consume a process
+
+        // pangita process na pwede ma run nga may pinakanubo nga arrival time
+        int toProcessIndex = -1, smallestArrivalTime = 0;
+        for (int i = 0; i < processes; i++) {
+            if (value[i].arrivalTime <= timer && value[i].processDone == 0) {
+
+                if (smallestArrivalTime == 0) {                          // For the first smallest process
+                    smallestArrivalTime = value[i].burstTime;
+                    toProcessIndex = i;
+                }
+                else if (value[i].burstTime < smallestArrivalTime) {  
+                    smallestArrivalTime = value[i].burstTime;
+                    toProcessIndex = i;
+                }
+
+            }
+        }
+        if (toProcessIndex != -1) {
+            value[toProcessIndex].idleTime = timer - value[toProcessIndex].arrivalTime;
+            printf("\n\tProcess %d is being executed with idle time %d.\t", value[toProcessIndex].processNum, value[toProcessIndex].idleTime);
+            timer += quantum;
+            value[toProcessIndex].processDone = 1;
+            continue;
+        }
+
+ 
+        timer++;
+    }
+
+    printSummary(value, processes);  // process results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 
     PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 100
     Gantt chart[MAX_COUNT];
     
