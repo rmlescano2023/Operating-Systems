@@ -13,7 +13,8 @@
 
 //---------------------------------------------------------------------------------------------------------------------------------------------- FUNCTION DECLARATIONS
 typedef struct {
-    int processNum, arrivalTime, burstTime, remainingTime, idleTime, processDone, toRun;
+    int processNum, arrivalTime, burstTime, remainingTime, idleTime, processDone, toRun, addedToQueue;
+    char processName[100];
 } PROCESS;
 
 typedef struct {        // stores the history of processes
@@ -266,10 +267,10 @@ void roundRobin(int processes) {
     int quantum = 5;
 
     // SAMPLE DATA
-    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 30, value[0].processDone = 0;
-    value[1].processNum = 2, value[1].arrivalTime = 28, value[1].burstTime = 154, value[1].processDone = 0;
-    value[2].processNum = 3, value[2].arrivalTime = 26, value[2].burstTime = 167, value[2].processDone = 0;
-    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0;
+    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 30, value[0].processDone = 0, value[0].remainingTime = value[0].burstTime;
+    value[1].processNum = 2, value[1].arrivalTime = 28, value[1].burstTime = 154, value[1].processDone = 0, value[1].remainingTime = value[1].burstTime;
+    value[2].processNum = 3, value[2].arrivalTime = 26, value[2].burstTime = 167, value[2].processDone = 0, value[2].remainingTime = value[2].burstTime;
+    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0, value[3].remainingTime = value[3].burstTime;
 
     // value is an array
     // SAMPLE DATA
@@ -284,68 +285,99 @@ void roundRobin(int processes) {
     int timer = 0;
     bool currentProcess = false;
 
+    // initialize the queue
+    int readyQueueSize = 0;
+    PROCESS readyQueue[MAX_COUNT];
+    // int front = -1, rear = -1;
+
+
     // Image this as a click in the clock of OS
     while (true) {
 
         // Check if all processes are done
         bool allDone = true;
-        for (int i = 0; i < processes; i++) {
-            if (value[i].processDone == 0) {    // traverses through all processes, checks if there is a single process with processDone = 0, allDone value becomes false
+        for (int i = 0; i < readyQueueSize; i++) {
+            if (readyQueue[i].processDone == 0) {    // traverses through all processes, checks if there is a single process with processDone = 0, allDone value becomes false
                 allDone = false;
                 break;
             }
         }
 
-        if (allDone == true) {      // if the condition above was not satisfied, meaning all processes are done. If not, proceed to next code block.
+
+        if (allDone == true && readyQueueSize == processes) {      // if the condition above was not satisfied, meaning all processes are done. If not, proceed to next code block.
             printf("FINISHED\n");
             break;
         }
 
-        // Consume a process
 
-        // pangita process na pwede ma run nga may pinakanubo nga arrival time
-        int toProcessIndex = -1, smallestArrivalTime = 0;
-        for (int i = 0; i < processes; i++) {
-            if (value[i].arrivalTime <= timer && value[i].processDone == 0) {
+        // Place to check if we can put some process to ready queue
+        while (true) {
+            int toAddProccess = -1, smallestArrivalTime = 0;
 
-                if (smallestArrivalTime == 0) {                          // For the first smallest process
-                    smallestArrivalTime = value[i].burstTime;
-                    toProcessIndex = i;
+            // Pick the process with the smallest arrival time
+            for (int i = 0; i < processes; i++) {
+                if (value[i].arrivalTime <= timer &&  value[i].addedToQueue == 0) {
+                    if (smallestArrivalTime == 0) {                          // For the first smallest process
+                        smallestArrivalTime = value[i].arrivalTime;
+                        toAddProccess = i;
+                    }
+                    else if (value[i].arrivalTime < smallestArrivalTime) {  
+                        smallestArrivalTime = value[i].arrivalTime;
+                        toAddProccess = i;
+                    }
+
                 }
-                else if (value[i].burstTime < smallestArrivalTime) {  
-                    smallestArrivalTime = value[i].burstTime;
-                    toProcessIndex = i;
-                }
-
             }
+
+            if (toAddProccess != -1) {
+                readyQueue[readyQueueSize] = value[toAddProccess];
+                readyQueueSize++;
+                value[toAddProccess].addedToQueue = 1;
+
+                printf("\n\tProcess %d has been added to readyQueue with arrival time at %d.\t", value[toAddProccess].processNum, value[toAddProccess].arrivalTime);
+            }
+            else {
+                break;
+            }
+
         }
-        if (toProcessIndex != -1) {
-            value[toProcessIndex].idleTime = timer - value[toProcessIndex].arrivalTime;
-            printf("\n\tProcess %d is being executed with idle time %d.\t", value[toProcessIndex].processNum, value[toProcessIndex].idleTime);
-            timer += quantum;
-            value[toProcessIndex].processDone = 1;
+
+        bool hasProcessed = false;
+
+        for (int i = 0; i < readyQueueSize; i++) {
+            if (readyQueue[i].processDone == 1) {
+                continue;
+            }
+
+
+
+            if (readyQueue[i].remainingTime <= quantum) {
+                timer += readyQueue[i].remainingTime;
+                readyQueue[i].remainingTime = 0;
+                readyQueue[i].processDone = 1;
+                
+                printf("\n\tProcess %d has been completed at %d.\t", readyQueue[i].processNum, timer);
+            }
+            else {
+                printf("\n\t{else} readyQueue[i].remainingTime <= quantum");
+                readyQueue[i].remainingTime = readyQueue[i].remainingTime - quantum;
+                printf("\n\tProcess %d is being executed at timer %d with remaining time %d.\t", readyQueue[i].processNum, timer, readyQueue[i].remainingTime);
+                timer += quantum;
+            }
+
+            hasProcessed = true;
+        }
+
+        if (hasProcessed == true) {
             continue;
         }
-
  
         timer++;
+
+        
     }
 
-    printSummary(value, processes);  // process results
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    printSummary(value, readyQueue);  // process results
 
 
 
