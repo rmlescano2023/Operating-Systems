@@ -124,55 +124,62 @@ void FCFS(int processes) {      // OK
 
     // Counter represents the clock in the OS
     // CurrentProcess represents the current process being executed
-    int timer = 0;
+    int timer = 0;                      // the timer represents the clock cycle of the process executions
     bool currentProcess = false;
 
-    // Image this as a click in the clock of OS
+    // Imagine this as a click in the clock of OS
     while (true) {
 
         // Check if all processes are done
         bool allDone = true;
         for (int i = 0; i < processes; i++) {
-            if (value[i].processDone == 0) {
+            if (value[i].processDone == 0) {        // if there is a single process that is not yet done, set allDone to false then break the loop
                 allDone = false;
                 break;
             }
         }
 
-        if (allDone == true) {
+        if (allDone == true) {      // if all the processes are done, break the while-loop
             printf("FINISHED\n");
             break;
         }
 
         // Consume a process
-
-        // pangita process na pwede ma run nga may pinakanubo nga arrival time
-        // SORT BY ARRIVAL TIME BEFORE PROCEEDING
+        // LOGIC: Find a process that can be processed that has the lowest Arrival time, set it to be processed first
         int toProcessIndex = -1, smallestArrivalTime = 0;
         for (int i = 0; i < processes; i++) {
-            if (value[i].arrivalTime <= timer && value[i].processDone == 0) {
+            if (value[i].arrivalTime <= timer && value[i].processDone == 0) {   // if the arrival time of the current process is less than or equal to the current tick of the timer
                 
-                if (smallestArrivalTime == 0) {                          // For the first smallest process
-                    smallestArrivalTime = value[i].arrivalTime;
-                    toProcessIndex = i;
+                if (smallestArrivalTime == 0) {                          
+                    smallestArrivalTime = value[i].arrivalTime;         // Assigns the first smallest process
+                    toProcessIndex = i;                                 // fetches the index of the current process to be processed
                 }
-                else if (value[i].arrivalTime < smallestArrivalTime) {  
+                else if (value[i].arrivalTime < smallestArrivalTime) {  // for the succeeding processes, fetch the process that is smaller than the current smallest arrival time
                     smallestArrivalTime = value[i].arrivalTime;
                     toProcessIndex = i;
                 }
 
             }
         }
-        if (toProcessIndex != -1) {
-            value[toProcessIndex].idleTime = timer - value[toProcessIndex].arrivalTime;
+
+        // after everything above, may nakita na nga process nga i-execute subong
+        // but, ma execute lang siya based on the time quantum
+        // Question is, do we need to sort the processess, based on their arrival times in order to be easier to implement?
+
+
+        // LOGIC: Solve for the idle time of a process
+        if (toProcessIndex != -1) {     // if a process arrives at a time when a different process is still executing, it is idle for a time being
+            value[toProcessIndex].idleTime = timer - value[toProcessIndex].arrivalTime;     // so, we just deduct the current time in the clock cycle by the arrival time of that process
+
             printf("\n\tProcess %d is being executed with idle time %d.\t", value[toProcessIndex].processNum, value[toProcessIndex].idleTime);
-            timer += value[toProcessIndex].burstTime;
-            value[toProcessIndex].processDone = 1;
+
+            timer += value[toProcessIndex].burstTime;   // here, we add the burst time to the timer to skip the entire execution time of that process
+            value[toProcessIndex].processDone = 1;      // then, we set the state of that process to DONE
             continue;
         }
 
  
-        timer++;
+        timer++;    // timer increments for the whole clock cycle
     }
 
     printSummary(value, processes);  // process results
@@ -279,6 +286,11 @@ void roundRobin(int processes) {
         printf("\tProcess %d: %d %d\n", i + 1, value[i].arrivalTime, value[i].burstTime);
     }
 
+
+
+
+
+
     // Counter represents the clock in the OS
     // CurrentProcess represents the current process being executed
     int timer = 0;
@@ -296,13 +308,12 @@ void roundRobin(int processes) {
             }
         }
 
-        if (allDone == true) {      // if the condition above was not satisfied, meaning all processes are done. If not, proceed to next code block.
+        if (allDone == true) {      // if the condition above was not satisfied, meaning all processes are done. If not, proceed to the next code block below.
             printf("FINISHED\n");
             break;
         }
 
-        // Consume a process
-
+        // CONSUME A PROCESS
         // pangita process na pwede ma run nga may pinakanubo nga arrival time
         int toProcessIndex = -1, smallestArrivalTime = 0;
         for (int i = 0; i < processes; i++) {
