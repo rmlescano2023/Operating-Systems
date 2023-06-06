@@ -290,13 +290,13 @@ void roundRobin(int processes) {
         // Check if all processes are done
         bool allDone = true;
         for (int i = 0; i < processes; i++) {
-            if (value[i].processDone == 0) {
+            if (value[i].processDone == 0) {    // traverses through all processes, checks if there is a single process with processDone = 0, allDone value becomes false
                 allDone = false;
                 break;
             }
         }
 
-        if (allDone == true) {
+        if (allDone == true) {      // if the condition above was not satisfied, meaning all processes are done. If not, proceed to next code block.
             printf("FINISHED\n");
             break;
         }
@@ -391,7 +391,7 @@ void roundRobin(int processes) {
 
 
 
-
+/* 
 
     int tempBurst = 0, totalBurst = 0, toPrint = 0;          // here, amu ni gamiton nga burst time sa pag add sang idle time sang other processess if in case the burst time of a process is now less than the time quantum
 
@@ -459,7 +459,7 @@ void roundRobin(int processes) {
                 break;
             }
             i -= processes;
-        } */
+        } 
 
     }
     printf("\n\n");
@@ -468,7 +468,7 @@ void roundRobin(int processes) {
 
 
 
-
+ */
 }
     
 // GANTT CHART
