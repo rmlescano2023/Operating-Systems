@@ -392,10 +392,6 @@ void roundRobin(int processes) {
     }
 
 
-
-
-
-
     // Counter represents the clock in the OS
     // CurrentProcess represents the current process being executed
     int timer = 0;
@@ -414,6 +410,10 @@ void roundRobin(int processes) {
     printf("\n\n\tGANTT CHART\n");
 
     // Image this as a click in the clock of OS
+
+    int beingProcessed = -1;
+    int remainingQuantum = 5;
+
     while (true) {
 
         
@@ -456,6 +456,7 @@ void roundRobin(int processes) {
             if (toAddProccess != -1) {          // here, we added the process that arrived, to the readyQueue to prepare to be processed
                 readyQueue[readyQueueSize] = value[toAddProccess];
                 readyQueueSize++;
+                // printf("\n\n\t>> Process %d was added to readyQueue at %d.\t", value[toAddProccess].processNum, timer);
                 value[toAddProccess].addedToQueue = 1;
 
                 //printf("\n\n\t>> Process %d was added to readyQueue with arrival time at %d.\t", value[toAddProccess].processNum, value[toAddProccess].arrivalTime);
@@ -466,53 +467,54 @@ void roundRobin(int processes) {
 
         }
 
-        bool hasProcessed = false;
+        // Check if you can end the program
+        if (beingProcessed == -1) {    // if there is no process being processed
+            for (int i = 0; i < readyQueueSize; i++) {
+                if (readyQueue[i].processDone == 1) {   // proceed to the next process that is in the readyQueue
+                    continue;
+                }
 
-        for (int i = 0; i < readyQueueSize; i++) {
-            if (readyQueue[i].processDone == 1) {   // proceed to the next process that is in the readyQueue
-                continue;
+                beingProcessed = i;
+                remainingQuantum = quantum;
+                // printf("trying to process %d\n", beingProcessed);
+                break;
             }
-
-            if (readyQueue[i].remainingTime <= quantum) {
-                timer += readyQueue[i].remainingTime;
-                readyQueue[i].remainingTime = 0;
-                readyQueue[i].processDone = 1;
-
-                printf("\t%d", readyQueue[i].processNum);
-
-
-
-
-
-
-                //printf("\t%d(P%d)", timer, readyQueue[i].processNum);
-
-                //printf("\tP%d", readyQueue[i].processNum);
-
-                //printf("\nTimer %d\t", timer);
-                //printf("Processing P%d\tRemaining Time: %d", readyQueue[i].processNum, readyQueue[i].remainingTime);
-
-                //printf("\n\tTimer %d... Executing Process %d\t\twith remaining time %d.\t\n", timer, readyQueue[i].processNum, readyQueue[i].remainingTime);
-                //printf("\n\t\t>> Process %d has completed processing at clock %d.\t", readyQueue[i].processNum, timer);
-            }
-            else {
-                readyQueue[i].remainingTime = readyQueue[i].remainingTime - quantum;
-                
-                printf("\t%d", readyQueue[i].processNum);
-
-                //printf("\nTimer %d\t", timer);
-                //printf("Processing P%d\tRemaining Time: %d", readyQueue[i].processNum, readyQueue[i].remainingTime);
-                //timer += quantum;
-
-            }
-
-            
-
-            hasProcessed = true;
         }
 
-        if (hasProcessed == true) {     // if a process has been processed, continue the round robin according to the time quantum, and skip the increment by 1 below
-            continue;
+        // Actual running of process
+        if (beingProcessed != -1) { // if there is a process being processed
+            // printf("Processing %d with remaining time %d at timer %d\n", beingProcessed, readyQueue[beingProcessed].remainingTime, timer);
+            readyQueue[beingProcessed].remainingTime = readyQueue[beingProcessed].remainingTime - 1;
+            remainingQuantum--;
+
+            if (readyQueue[beingProcessed].remainingTime == 0 || remainingQuantum == 0) {
+                // printf("\t done processing %d\n", readyQueue[beingProcessed].processNum);
+                printf("\tP%d", readyQueue[beingProcessed].processNum);
+                if (readyQueue[beingProcessed].remainingTime == 0) {
+                    readyQueue[beingProcessed].processDone = 1;
+                    
+
+                }
+                remainingQuantum = quantum;
+
+                bool foundNextToProcess = false;
+                for (int i = beingProcessed + 1; i < readyQueueSize; i++) {
+                    if (readyQueue[i].processDone == 1) {   // proceed to the next process that is in the readyQueue
+                        continue;
+                    }
+
+                    beingProcessed = i;
+                    remainingQuantum = quantum;
+                    foundNextToProcess = true;
+                    // printf("trying to proceed to next process %d\n", beingProcessed);
+                    break;
+                }
+
+                if (foundNextToProcess == false) {
+                    beingProcessed = -1;
+                }
+            }
+            
         }
  
         timer++;
