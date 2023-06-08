@@ -11,7 +11,12 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+
 #define NUM_THREADS	4
+#define MAXIMUM_NUMBER 1000
+
 
 void *BusyWork(void *t)
 {

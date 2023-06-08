@@ -453,7 +453,7 @@ void roundRobin(int processes) {
                 }
             }
 
-            if (toAddProccess != -1) {
+            if (toAddProccess != -1) {          // here, we added the process that arrived, to the readyQueue to prepare to be processed
                 readyQueue[readyQueueSize] = value[toAddProccess];
                 readyQueueSize++;
                 value[toAddProccess].addedToQueue = 1;
@@ -482,33 +482,28 @@ void roundRobin(int processes) {
 
                 //printf("\tP%d", readyQueue[i].processNum);
 
-                printf("\t%d", timer);
+                printf("\nTimer %d\t", timer);
+                printf("Processing P%d\tRemaining Time: %d", readyQueue[i].processNum, readyQueue[i].remainingTime);
 
                 //printf("\n\tTimer %d... Executing Process %d\t\twith remaining time %d.\t\n", timer, readyQueue[i].processNum, readyQueue[i].remainingTime);
                 //printf("\n\t\t>> Process %d has completed processing at clock %d.\t", readyQueue[i].processNum, timer);
             }
             else {
-                //printf("\n\t{else} readyQueue[i].remainingTime <= quantum");
                 readyQueue[i].remainingTime = readyQueue[i].remainingTime - quantum;
-                //printf("\n\tTimer %d... Executing Process %d\t\twith remaining time %d.\t\n", timer, readyQueue[i].processNum, readyQueue[i].remainingTime);
                 
-                //printf("\tP%d", readyQueue[i].processNum);
-                printf("\t%d", timer);
-                
+                printf("\nTimer %d\t", timer);
+                printf("Processing P%d\tRemaining Time: %d", readyQueue[i].processNum, readyQueue[i].remainingTime);
                 timer += quantum;
 
             }
 
-            //printf("\t%d", timer);
-
             hasProcessed = true;
         }
 
-        if (hasProcessed == true) {
+        if (hasProcessed == true) {     // if a process has been processed, continue the round robin according to the time quantum, and skip the increment by 1 below
             continue;
         }
  
-        //printf("\n\tTimer %d...", timer);
         timer++;
 
         
