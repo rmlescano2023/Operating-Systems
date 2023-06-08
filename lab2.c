@@ -478,12 +478,19 @@ void roundRobin(int processes) {
                 readyQueue[i].remainingTime = 0;
                 readyQueue[i].processDone = 1;
 
+                printf("\t%d", readyQueue[i].processNum);
+
+
+
+
+
+
                 //printf("\t%d(P%d)", timer, readyQueue[i].processNum);
 
                 //printf("\tP%d", readyQueue[i].processNum);
 
-                printf("\nTimer %d\t", timer);
-                printf("Processing P%d\tRemaining Time: %d", readyQueue[i].processNum, readyQueue[i].remainingTime);
+                //printf("\nTimer %d\t", timer);
+                //printf("Processing P%d\tRemaining Time: %d", readyQueue[i].processNum, readyQueue[i].remainingTime);
 
                 //printf("\n\tTimer %d... Executing Process %d\t\twith remaining time %d.\t\n", timer, readyQueue[i].processNum, readyQueue[i].remainingTime);
                 //printf("\n\t\t>> Process %d has completed processing at clock %d.\t", readyQueue[i].processNum, timer);
@@ -491,11 +498,15 @@ void roundRobin(int processes) {
             else {
                 readyQueue[i].remainingTime = readyQueue[i].remainingTime - quantum;
                 
-                printf("\nTimer %d\t", timer);
-                printf("Processing P%d\tRemaining Time: %d", readyQueue[i].processNum, readyQueue[i].remainingTime);
-                timer += quantum;
+                printf("\t%d", readyQueue[i].processNum);
+
+                //printf("\nTimer %d\t", timer);
+                //printf("Processing P%d\tRemaining Time: %d", readyQueue[i].processNum, readyQueue[i].remainingTime);
+                //timer += quantum;
 
             }
+
+            
 
             hasProcessed = true;
         }
