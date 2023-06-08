@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define MAX_COUNT 100
+#define MAX_COUNT 1000
 
 // TO DO:
 // 1. Finish Round Robin Scheduling
@@ -13,27 +13,30 @@
 
 //---------------------------------------------------------------------------------------------------------------------------------------------- FUNCTION DECLARATIONS
 typedef struct {
-    int processNum, arrivalTime, burstTime, remainingTime, idleTime, processDone, toRun, addedToQueue;
+    int processNum, priorityNum, arrivalTime, burstTime, remainingTime, idleTime, executeTime, processDone, terminatedTime, toRun, addedToQueue, finalTimer;
     char processName[100];
 } PROCESS;
 
-typedef struct {        // stores the history of processes
-    int pNum, pBurst, totalBurst;
-} Gantt;
+typedef struct {
+    int pNum, pTimer;
+} GANTT;
 
 void FCFS(int processes);
 void SJF(int processes);
 void priorityBased(int processes);
 void roundRobin(int processes);
 
+int printReadyQueue(PROCESS readyQueue[MAX_COUNT], int readyQueueSize, PROCESS value[MAX_COUNT], int processes);
+int roundRobinGanttChart(GANTT ganttChart[MAX_COUNT]);
+
 int totalTime(PROCESS value[MAX_COUNT], int processes);
 void bubbleSort(PROCESS value[MAX_COUNT], int processes);
-int printSummary(PROCESS value[MAX_COUNT], int processes);
+
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- MAIN
 int main() {
 
-    system("clear");
+    //system("clear");
 
     int decision, processes;
 
@@ -55,7 +58,7 @@ int main() {
 
         switch (decision) {
             case 1:
-                system("clear");
+                //system("clear");
 
                 printf("\n\t>> FCFS Scheduling <<\n\tSpecify the number of processes: ");
                 scanf("%d", &processes);
@@ -65,7 +68,7 @@ int main() {
                 break;
 
             case 2:
-                system("clear");
+                //system("clear");
 
                 printf("\n\t>> SJF Scheduling <<\n\tSpecify the number of processes: ");
                 scanf("%d", &processes);
@@ -75,7 +78,7 @@ int main() {
                 break;
 
             case 3:
-                system("clear");
+                //system("clear");
 
                 printf("\n\t>> Priority Based Scheduling <<\n\tSpecify the number of processes: ");
                 scanf("%d", &processes);
@@ -85,7 +88,7 @@ int main() {
                 break;
 
             case 4:
-                system("clear");
+                //system("clear");
 
                 printf("\n\t>> Round Robin  Scheduling <<\n\tSpecify the number of processes: ");
                 scanf("%d", &processes);
@@ -114,8 +117,6 @@ void FCFS(int processes) {      // OK
     value[1].processNum = 2, value[1].arrivalTime = 28, value[1].burstTime = 154, value[1].processDone = 0;
     value[2].processNum = 3, value[2].arrivalTime = 26, value[2].burstTime = 127, value[2].processDone = 0;
     value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0;
-
-    // value is an array
     // SAMPLE DATA
 
     printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
@@ -127,6 +128,9 @@ void FCFS(int processes) {      // OK
     // CurrentProcess represents the current process being executed
     int timer = 0;                      // the timer represents the clock cycle of the process executions
     bool currentProcess = false;
+
+    int readyQueueSize = 0;
+    PROCESS readyQueue[MAX_COUNT];
 
     // Imagine this as a click in the clock of OS
     while (true) {
@@ -141,7 +145,8 @@ void FCFS(int processes) {      // OK
         }
 
         if (allDone == true) {      // if all the processes are done, break the while-loop
-            printf("FINISHED\n");
+            value[0].finalTimer = timer;
+            printf("Final timer is %d", value[0].finalTimer);
             break;
         }
 
@@ -163,27 +168,29 @@ void FCFS(int processes) {      // OK
             }
         }
 
-        // after everything above, may nakita na nga process nga i-execute subong
-        // but, ma execute lang siya based on the time quantum
-        // Question is, do we need to sort the processess, based on their arrival times in order to be easier to implement?
-
-
         // LOGIC: Solve for the idle time of a process
         if (toProcessIndex != -1) {     // if a process arrives at a time when a different process is still executing, it is idle for a time being
-            value[toProcessIndex].idleTime = timer - value[toProcessIndex].arrivalTime;     // so, we just deduct the current time in the clock cycle by the arrival time of that process
+            readyQueue[readyQueueSize].processNum = value[toProcessIndex].processNum;
+            readyQueue[readyQueueSize].burstTime = value[toProcessIndex].burstTime;
+            readyQueue[readyQueueSize].executeTime = timer;
+            readyQueue[readyQueueSize].idleTime = timer - value[toProcessIndex].arrivalTime;
+            readyQueueSize++;
 
-            printf("\n\tProcess %d is being executed with idle time %d.\t", value[toProcessIndex].processNum, value[toProcessIndex].idleTime);
-
-            timer += value[toProcessIndex].burstTime;   // here, we add the burst time to the timer to skip the entire execution time of that process
-            value[toProcessIndex].processDone = 1;      // then, we set the state of that process to DONE
+            printf("\nP%d is being executed at timer %d - at index %d.\n", value[toProcessIndex].processNum, timer, toProcessIndex);
+            timer += value[toProcessIndex].burstTime;           // here, we add the burst time to the timer to skip the entire execution time of that process
+            
+            value[toProcessIndex].processDone = 1;              // then, we set the state of that process to DONE
+            value[toProcessIndex].terminatedTime = timer - value[toProcessIndex].arrivalTime;  // here, we set the time that the process finished executing
+            
+            printf("P%d finished executing at clock cycle %d\n", value[toProcessIndex].processNum, timer);
+            printf("Turnaround time of P%d is %d\n\n", value[toProcessIndex].processNum, value[toProcessIndex].terminatedTime);
             continue;
         }
 
- 
         timer++;    // timer increments for the whole clock cycle
     }
 
-    printSummary(value, processes);  // process results
+    printReadyQueue(readyQueue, readyQueueSize, value, processes);
 
 }
 
@@ -192,12 +199,10 @@ void SJF(int processes) {
     PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
 
     // SAMPLE DATA
-    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 30, value[0].processDone = 0;
-    value[1].processNum = 2, value[1].arrivalTime = 28, value[1].burstTime = 154, value[1].processDone = 0;
-    value[2].processNum = 3, value[2].arrivalTime = 26, value[2].burstTime = 167, value[2].processDone = 0;
-    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0;
-
-    // value is an array
+    value[0].processNum = 1, value[0].arrivalTime = 15, value[0].burstTime = 100, value[0].processDone = 0;
+    value[1].processNum = 2, value[1].arrivalTime = 13, value[1].burstTime = 27, value[1].processDone = 0;
+    value[2].processNum = 3, value[2].arrivalTime = 22, value[2].burstTime = 57, value[2].processDone = 0;
+    value[3].processNum = 4, value[3].arrivalTime = 90, value[3].burstTime = 39, value[3].processDone = 0;
     // SAMPLE DATA
 
     printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
@@ -207,64 +212,163 @@ void SJF(int processes) {
 
     // Counter represents the clock in the OS
     // CurrentProcess represents the current process being executed
-    int timer = 0;
+    int timer = 0;                      // the timer represents the clock cycle of the process executions
     bool currentProcess = false;
 
-    // Image this as a click in the clock of OS
+    int readyQueueSize = 0;
+    PROCESS readyQueue[MAX_COUNT];
+
+    // Imagine this as a click in the clock of OS
     while (true) {
 
         // Check if all processes are done
         bool allDone = true;
         for (int i = 0; i < processes; i++) {
-            if (value[i].processDone == 0) {
+            if (value[i].processDone == 0) {        // if there is a single process that is not yet done, set allDone to false then break the loop
                 allDone = false;
                 break;
             }
         }
 
-        if (allDone == true) {
-            printf("FINISHED\n");
+        if (allDone == true) {      // if all the processes are done, break the while-loop
+            value[0].finalTimer = timer;
+            printf("Final timer is %d", value[0].finalTimer);
             break;
         }
 
         // Consume a process
-
-        // pangita process na pwede ma run nga may pinakanubo nga arrival time
+        // LOGIC: Find a process that can be processed that has the lowest Burst time, set it to be processed first
         int toProcessIndex = -1, smallestBurstTime = 0;
         for (int i = 0; i < processes; i++) {
             if (value[i].arrivalTime <= timer && value[i].processDone == 0) {
 
-                if (smallestBurstTime == 0) {                          // For the first smallest process
-                    smallestBurstTime = value[i].burstTime;
-                    toProcessIndex = i;
+                if (smallestBurstTime == 0) {                          
+                    smallestBurstTime = value[i].burstTime;             // Assigns the first smallest process
+                    toProcessIndex = i;                                 // fetches the index of the current process to be processed
                 }
-                else if (value[i].burstTime < smallestBurstTime) {  
+                else if (value[i].burstTime < smallestBurstTime) {      // for the succeeding processes, fetch the process that is smaller than the current smallest arrival time
                     smallestBurstTime = value[i].burstTime;
                     toProcessIndex = i;
                 }
 
             }
         }
+
+
+        // LOGIC: Solve for the idle time of a process
         if (toProcessIndex != -1) {
-            value[toProcessIndex].idleTime = timer - value[toProcessIndex].arrivalTime;
-            printf("\n\tProcess %d is being executed with idle time %d.\t", value[toProcessIndex].processNum, value[toProcessIndex].idleTime);
-            timer += value[toProcessIndex].burstTime;
-            value[toProcessIndex].processDone = 1;
+            readyQueue[readyQueueSize].processNum = value[toProcessIndex].processNum;
+            readyQueue[readyQueueSize].burstTime = value[toProcessIndex].burstTime;
+            readyQueue[readyQueueSize].executeTime = timer;
+            readyQueue[readyQueueSize].idleTime = timer - value[toProcessIndex].arrivalTime;
+            readyQueueSize++;
+
+            printf("\nP%d is being executed at timer %d - at index %d.\n", value[toProcessIndex].processNum, timer, toProcessIndex);
+            timer += value[toProcessIndex].burstTime;           // here, we add the burst time to the timer to skip the entire execution time of that process
+
+            value[toProcessIndex].processDone = 1;              // then, we set the state of that process to DONE
+            value[toProcessIndex].terminatedTime = timer - value[toProcessIndex].arrivalTime;  // here, we set the time that the process finished executing
+            
+            printf("P%d finished executing at clock cycle %d\n", value[toProcessIndex].processNum, timer);
+            printf("Turnaround time of P%d is %d\n\n", value[toProcessIndex].processNum, value[toProcessIndex].terminatedTime);
             continue;
         }
 
- 
-        timer++;
+        timer++;    // timer increments for the whole clock cycle
     }
 
-    printSummary(value, processes);  // process results
+    printReadyQueue(readyQueue, readyQueueSize, value, processes);
 
 }
 
 void priorityBased(int processes) {
 
-    printf("\n\t%d\n", processes);
+    PROCESS value[MAX_COUNT];    // created an array "value" of type "struct values" with a capacity of 10
 
+    // SAMPLE DATA
+    value[0].processNum = 1, value[0].arrivalTime = 15, value[0].burstTime = 100, value[0].priorityNum = 3, value[0].processDone = 0;
+    value[1].processNum = 2, value[1].arrivalTime = 13, value[1].burstTime = 27, value[1].priorityNum = 2, value[1].processDone = 0;
+    value[2].processNum = 3, value[2].arrivalTime = 22, value[2].burstTime = 57, value[2].priorityNum = 4, value[2].processDone = 0;
+    value[3].processNum = 4, value[3].arrivalTime = 90, value[3].burstTime = 39, value[3].priorityNum = 1, value[3].processDone = 0;
+    // SAMPLE DATA
+
+    printf("\n\tEnter the Arrival Time, Burst Time, and Priority Number for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time] [Priority Number]\nNOTE: Priority Numbers should be set in the range 1 - (number of processes)\n\n");
+    for (int i = 0; i < processes; i++) {
+
+        printf("\tProcess %d: %d %d %d\n", i + 1, value[i].arrivalTime, value[i].burstTime, value[i].priorityNum);
+
+        // ADD AN ERROR HANDLER HERE IF A PRIORITY NUMBER INPUT IS NOT WITHIN THE RANGE 1 - NUMBER OF PROCESSESS
+    }
+
+    // Counter represents the clock in the OS
+    // CurrentProcess represents the current process being executed
+    int timer = 0;                      // the timer represents the clock cycle of the process executions
+    bool currentProcess = false;
+
+    int readyQueueSize = 0;
+    PROCESS readyQueue[MAX_COUNT];
+
+    // Imagine this as a click in the clock of OS
+    while (true) {
+
+        // Check if all processes are done
+        bool allDone = true;
+        for (int i = 0; i < processes; i++) {
+            if (value[i].processDone == 0) {        // if there is a single process that is not yet done, set allDone to false then break the loop
+                allDone = false;
+                break;
+            }
+        }
+
+        if (allDone == true) {      // if all the processes are done, break the while-loop
+            value[0].finalTimer = timer;
+            printf("Final timer is %d", value[0].finalTimer);
+            break;
+        }
+
+        // Consume a process
+        // LOGIC: Find a process that can be processed that has the lowest Arrival Time and has Higher Priority, set it to be processed first
+        int toProcessIndex = -1, smallestArrivalTime = 0, highestPriorityProcess = -1;
+        for (int i = 0; i < processes; i++) {
+            if (value[i].arrivalTime <= timer && value[i].processDone == 0) {
+
+                if (highestPriorityProcess == -1) {                           // If there aren't any assigned process with the lowest arrival time yet
+                    highestPriorityProcess = value[i].priorityNum;           // Assigns the first smallest process
+                    toProcessIndex = i;                                   // fetches the index of the current process to be processed
+                    //printf("Prioritize P%d with priority number %d", value[toProcessIndex].processNum, value[toProcessIndex].priorityNum);
+                }
+                else if (value[i].priorityNum < highestPriorityProcess) {    // for the succeeding processes, fetch the process that is smaller than the current smallest arrival time
+                    highestPriorityProcess = value[i].priorityNum;
+                    toProcessIndex = i;
+                    //printf("Prioritize P%d with priority number %d", value[toProcessIndex].processNum, value[toProcessIndex].priorityNum);
+                }
+
+            }
+        }
+
+        // LOGIC: Solve for the idle time of a process
+        if (toProcessIndex != -1) {
+            readyQueue[readyQueueSize].processNum = value[toProcessIndex].processNum;
+            readyQueue[readyQueueSize].burstTime = value[toProcessIndex].burstTime;
+            readyQueue[readyQueueSize].executeTime = timer;
+            readyQueue[readyQueueSize].idleTime = timer - value[toProcessIndex].arrivalTime;
+            readyQueueSize++;
+
+            printf("\nP%d is being executed at timer %d - at index %d with priority number %d.\n", value[toProcessIndex].processNum, timer, toProcessIndex, value[toProcessIndex].priorityNum);
+            timer += value[toProcessIndex].burstTime;           // here, we add the burst time to the timer to skip the entire execution time of that process
+
+            value[toProcessIndex].processDone = 1;              // then, we set the state of that process to DONE
+            value[toProcessIndex].terminatedTime = timer - value[toProcessIndex].arrivalTime;  // here, we set the time that the process finished executing
+            
+            printf("P%d finished executing at clock cycle %d\n", value[toProcessIndex].processNum, timer);
+            printf("Turnaround time of P%d is %d\n\n", value[toProcessIndex].processNum, value[toProcessIndex].terminatedTime);
+            continue;
+        }
+
+        timer++;    // timer increments for the whole clock cycle
+    }
+
+    printReadyQueue(readyQueue, readyQueueSize, value, processes);
 }
 
 void roundRobin(int processes) {
@@ -274,10 +378,10 @@ void roundRobin(int processes) {
     int quantum = 5;
 
     // SAMPLE DATA
-    value[0].processNum = 1, value[0].arrivalTime = 0, value[0].burstTime = 30, value[0].processDone = 0, value[0].remainingTime = value[0].burstTime;
-    value[1].processNum = 2, value[1].arrivalTime = 28, value[1].burstTime = 154, value[1].processDone = 0, value[1].remainingTime = value[1].burstTime;
-    value[2].processNum = 3, value[2].arrivalTime = 26, value[2].burstTime = 167, value[2].processDone = 0, value[2].remainingTime = value[2].burstTime;
-    value[3].processNum = 4, value[3].arrivalTime = 200, value[3].burstTime = 300, value[3].processDone = 0, value[3].remainingTime = value[3].burstTime;
+    value[0].processNum = 1, value[0].arrivalTime = 5, value[0].burstTime = 10, value[0].processDone = 0, value[0].remainingTime = value[0].burstTime;
+    value[1].processNum = 2, value[1].arrivalTime = 13, value[1].burstTime = 27, value[1].processDone = 0, value[1].remainingTime = value[1].burstTime;
+    value[2].processNum = 3, value[2].arrivalTime = 22, value[2].burstTime = 57, value[2].processDone = 0, value[2].remainingTime = value[2].burstTime;
+    value[3].processNum = 4, value[3].arrivalTime = 90, value[3].burstTime = 39, value[3].processDone = 0, value[3].remainingTime = value[3].burstTime;
 
     // value is an array
     // SAMPLE DATA
@@ -302,10 +406,17 @@ void roundRobin(int processes) {
     PROCESS readyQueue[MAX_COUNT];
     // int front = -1, rear = -1;
 
+    GANTT ganttChart[MAX_COUNT];
+    int ganttIndex = 0;
+
+    printf("\n\n\tProcessing...");
+
+    printf("\n\n\tGANTT CHART\n");
 
     // Image this as a click in the clock of OS
     while (true) {
 
+        
         // Check if all processes are done
         bool allDone = true;
         for (int i = 0; i < readyQueueSize; i++) {
@@ -317,7 +428,8 @@ void roundRobin(int processes) {
 
 
         if (allDone == true && readyQueueSize == processes) {      // if the condition above was not satisfied, meaning all processes are done. If not, proceed to next code block.
-            printf("FINISHED\n");
+            value[0].finalTimer = timer;
+            printf("\n\n\tProgram terminated at clock time %d.\n", value[0].finalTimer);
             break;
         }
 
@@ -346,7 +458,7 @@ void roundRobin(int processes) {
                 readyQueueSize++;
                 value[toAddProccess].addedToQueue = 1;
 
-                printf("\n\tProcess %d has been added to readyQueue with arrival time at %d.\t", value[toAddProccess].processNum, value[toAddProccess].arrivalTime);
+                //printf("\n\n\t>> Process %d was added to readyQueue with arrival time at %d.\t", value[toAddProccess].processNum, value[toAddProccess].arrivalTime);
             }
             else {
                 break;
@@ -361,19 +473,22 @@ void roundRobin(int processes) {
                 continue;
             }
 
-
-
             if (readyQueue[i].remainingTime <= quantum) {
                 timer += readyQueue[i].remainingTime;
                 readyQueue[i].remainingTime = 0;
                 readyQueue[i].processDone = 1;
-                
-                printf("\n\tProcess %d has been completed at %d.\t", readyQueue[i].processNum, timer);
+
+                //printf("\tP%d", readyQueue[i].processNum);
+                //printf("\n\tTimer %d... Executing Process %d\t\twith remaining time %d.\t\n", timer, readyQueue[i].processNum, readyQueue[i].remainingTime);
+                //printf("\n\t\t>> Process %d has completed processing at clock %d.\t", readyQueue[i].processNum, timer);
             }
             else {
-                printf("\n\t{else} readyQueue[i].remainingTime <= quantum");
+                //printf("\n\t{else} readyQueue[i].remainingTime <= quantum");
                 readyQueue[i].remainingTime = readyQueue[i].remainingTime - quantum;
-                printf("\n\tProcess %d is being executed at timer %d with remaining time %d.\t", readyQueue[i].processNum, timer, readyQueue[i].remainingTime);
+                //printf("\n\tTimer %d... Executing Process %d\t\twith remaining time %d.\t\n", timer, readyQueue[i].processNum, readyQueue[i].remainingTime);
+                
+                printf("\tP%d", readyQueue[i].processNum);
+                
                 timer += quantum;
             }
 
@@ -384,12 +499,17 @@ void roundRobin(int processes) {
             continue;
         }
  
+        //printf("\n\tTimer %d...", timer);
         timer++;
 
         
     }
 
-    printSummary(value, readyQueue);  // process results
+    roundRobinGanttChart(ganttChart);
+
+    //printReadyQueue(readyQueue, readyQueueSize, value, processes);
+
+    //printSummary(value, readyQueue);  // process results
 
 
 
@@ -514,32 +634,67 @@ void roundRobin(int processes) {
 
  */
 }
-    
-// GANTT CHART
-// P0       chartIndex = 0      burst = 0                   P1 = 53     P2 = 8      P3 = 68     P4 = 24         TOTAL: 0
-// P1       chartIndex = 1      burst = 20                  P1 = 33     P2 = 8      P3 = 68     P4 = 24         TOTAL: 20
-// P2       chartIndex = 2      burst = 8                   P1 = 33     P2 = 0      P3 = 68     P4 = 24         TOTAL: 28
-// P3       chartIndex = 3      burst = 20                  P1 = 33     P2 = 0      P3 = 48     P4 = 24         TOTAL: 48
-// P4       chartIndex = 4      burst = 20                  P1 = 33     P2 = 0      P3 = 48     P4 = 4          TOTAL: 68
-// P1       chartIndex = 5      burst = 20                  P1 = 13     P2 = 0      P3 = 48     P4 = 4          TOTAL: 88
-// SKIP P2
-// P3       chartIndex = 6      burst = 20                  P1 = 13     P2 = 0      P3 = 28     P4 = 4          TOTAL: 108
-// P4       chartIndex = 7      burst = 4                   P1 = 13     P2 = 0      P3 = 28     P4 = 0          TOTAL: 112
-// P1       chartIndex = 8      burst = 13                  P1 = 0      P2 = 0      P3 = 28     P4 = 0          TOTAL: 125
-// SKIP P2
-// P3       chartIndex = 9      burst = 20                  P1 = 0      P2 = 0      P3 = 8      P4 = 0          TOTAL: 145
-// SKIP P4
-// SKIP P1
-// SKIP P2
-// P3       chartIndex = 10     burst = 8                   P1 = 0      P2 = 0      P3 = 0      P4 = 0          TOTAL: 153
-
-
-
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- OTHER FUNCTIONS
+int printReadyQueue(PROCESS readyQueue[MAX_COUNT], int readyQueueSize, PROCESS value[MAX_COUNT], int processes) {
+
+    float turnaroundSum = 0, waitingSum = 0;
+
+    printf("\n\tGANTT CHART\n\t");
+    for (int i = 0; i < readyQueueSize; i++) {                  // prints the order of processess
+        printf("P%d\t", readyQueue[i].processNum);
+    }
+    printf("\n\t");
+    for (int i = 0; i < readyQueueSize; i++) {                  // prints the time each process executes
+        printf("%d\t", readyQueue[i].executeTime);
+    }
+    printf("%d\n", value[0].finalTimer);      // prints the end time of execution
+
+    printf("\nIDLE TIMES\n");                                   // prins the idle times of every process
+    for (int i = 0; i < processes; i++) {
+        printf("P%d: %d\n", readyQueue[i].processNum, readyQueue[i].idleTime);
+    }
+
+    // Turnaround time - time when the process finished executing (time finished executing - arrival time)
+    printf("\nTURNAROUND TIMES\n");
+    for (int i = 0; i < processes; i++) {
+        printf("TA%d: %d\n", value[i].processNum, value[i].terminatedTime);
+    }
+
+    for (int i = 0; i < processes; i++) {
+        turnaroundSum += value[i].terminatedTime;
+        waitingSum += readyQueue[i].idleTime;
+
+    }
+
+    printf("\n");
+    printf("turnaroundSum = %f", turnaroundSum);
+
+    printf("\n\n\t** Average Turnaround Time:\t%.6f **", turnaroundSum/processes);
+    printf("\n\t** Average Waiting Time:\t%.6f **\n", waitingSum/processes);
+}
+
+int roundRobinGanttChart(GANTT ganttChart[MAX_COUNT]) {
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// to remove?
 int totalTime(PROCESS value[MAX_COUNT], int processes) {
 
-    // this function adds all the remaining burst time, if it is equal to zero, all processes are done
+    // this function adds all the remaining burst times, if it is equal to zero, all processes are done
     int total = 0;
     for (int i = 0; i < processes; i++) {
         total += value[i].burstTime;
@@ -548,6 +703,7 @@ int totalTime(PROCESS value[MAX_COUNT], int processes) {
     return total;
 }
 
+// to remove?
 void bubbleSort(PROCESS value[MAX_COUNT], int processes) {
 
     int i, j, temp1, temp2;
@@ -568,8 +724,44 @@ void bubbleSort(PROCESS value[MAX_COUNT], int processes) {
     
 }
 
-int printSummary(PROCESS value[MAX_COUNT], int processes) {
 
+
+
+
+
+
+
+
+
+/* int printSummary(PROCESS value[MAX_COUNT], int processes) {
+
+    for (int i = 0; i < processes; i++) {
+        printf("%d\t", value[i].executeTime);
+    }
+    
+    
+    printf("\n\nRESULTS ARE PRINTED HERE\n");
+
+    printf("Waiting Times:\n");
+    for (int i = 0; i < processes; i++) {
+        printf("\nP%d: %d", value[i].processNum, value[i].idleTime);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     int burstArray[MAX_COUNT], turnaroundArray[MAX_COUNT], waitingArray[MAX_COUNT];     // arrays
     float turnaroundSum = 0, waitingSum = 0;                                            // sums
     int currentBurst = 0;                                                               // burst tracker
@@ -611,4 +803,4 @@ int printSummary(PROCESS value[MAX_COUNT], int processes) {
     printf("\n\n\t** Average Turnaround Time:\t%.6f **", turnaroundSum/processes);
     printf("\n\t** Average Waiting Time:\t%.6f **\n", waitingSum/processes);
 
-}
+} */
