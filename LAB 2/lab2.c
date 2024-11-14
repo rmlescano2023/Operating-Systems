@@ -119,14 +119,6 @@ void FCFS(int processes) {
     int timer = 0, readyQueueSize = 0, ganttChartIndex = 0;          // the timer represents the clock cycle of the process executions
     bool toPrintIdle = true;
 
-    /* printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
-    for (int i = 0; i < processes; i++) {
-        printf("\tProcess %d: ", i + 1);
-        scanf("%d %d", &value[i].arrivalTime, &value[i].burstTime);
-
-        value[i].processNum = i + 1;
-    } */
-
     printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
     for (int i = 0; i < processes; i++) {
         printf("\tProcess %d: %d %d\n", i + 1, value[i].arrivalTime, value[i].burstTime);
@@ -227,14 +219,6 @@ void SJF(int processes) {
     int timer = 0, readyQueueSize = 0, ganttChartIndex = 0;          // the timer represents the clock cycle of the process executions
     bool toPrintIdle = true;
 
-    /* printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
-    for (int i = 0; i < processes; i++) {
-        printf("\tProcess %d: ", i + 1);
-        scanf("%d %d", &value[i].arrivalTime, &value[i].burstTime);
-
-        value[i].processNum = i + 1;
-    } */
-
     printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
     for (int i = 0; i < processes; i++) {
         printf("\tProcess %d: %d %d\n", i + 1, value[i].arrivalTime, value[i].burstTime);
@@ -334,14 +318,6 @@ void priorityBased(int processes) {
     int timer = 0, readyQueueSize = 0, ganttChartIndex = 0;          // the timer represents the clock cycle of the process executions
     bool toPrintIdle = true;
 
-    /* printf("\n\tEnter the Arrival Time, Burst Time, and Priority Number for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time] [Priority Number]\n\tNOTE: Priority Numbers should be set in the range 1 - (number of processes)\n\n");
-    for (int i = 0; i < processes; i++) {
-        printf("\tProcess %d: ", i + 1);
-        scanf("%d %d %d", &value[i].arrivalTime, &value[i].burstTime, &value[i].priorityNum);
-
-        value[i].processNum = i + 1;
-    } */
-
     printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
     for (int i = 0; i < processes; i++) {
         printf("\tProcess %d: %d %d %d\n", i + 1, value[i].arrivalTime, value[i].burstTime, value[i].priorityNum);
@@ -439,19 +415,6 @@ void roundRobin(int processes) {
 
     int timer = 0, quantum = 0, readyQueueSize = 0, beingProcessed = -1, roundArrayIndex = 0, ganttChartIndex = 0;
     bool toPrintIdle = true;
-    
-    
-    /* printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
-    for (int i = 0; i < processes; i++) {
-        printf("\tProcess %d: ", i + 1);
-        scanf("%d %d", &value[i].arrivalTime, &value[i].burstTime);
-
-        value[i].processNum = i + 1;
-
-        // Some initializations for the Round Robin
-        value[i].remainingTime = value[i].burstTime;
-        value[i].processDone = 0;
-    } */
 
     printf("\n\tEnter the Arrival Time and Burst Time for every process.\n\tFORMAT: Process #: [Arrival Time] [Burst Time]\n\n");
     for (int i = 0; i < processes; i++) {
@@ -461,10 +424,7 @@ void roundRobin(int processes) {
     quantum = 5;
     printf("\n\tEnter the Quantum time: %d", quantum);
 
-    /* printf("\n\tEnter the Quantum time: ");
-    scanf("%d", &quantum); */
     int remainingQuantum = quantum;
-
 
 
     while (true) {
